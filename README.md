@@ -25,8 +25,6 @@
     - 이것을 자동으로 선언하려면 롬복 어노테이션 '@Slf4j'를 사용하면 된다.
     
  - 로그 레벨
- 
-    ![log-level](./image/chapter1/log-level.PNG)
     - TRACE > DEBUG > INFO > WARN > ERROR
     - 개발 서버는 debug를 출력하는 것이, 운영서버는 info를 출력하는 것이 보편적이다.
     
