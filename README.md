@@ -278,7 +278,7 @@
   
 ### @ResponseBody 동작 흐름
 
-  ![converter.png](./image/converter.png)
+  ![converter.png](./converter.png)
     
    - 해당 어노테이션을 사용함으로써 viewResolver가 아닌 HttpMessageConverter가 사용된다.
     
@@ -344,14 +344,14 @@
 ### 요청 매핑 핸들러 어댑터
 
 #### 구조
-   ![adapter.png](./image/adapter.png)
+   ![adapter.png](./adapter.png)
    
    - @RequestMapping과 같은 요청을 처리하는 어댑터는 핸들러 어댑터를 확장하여 
    구현한 RequestMappingHandlerAdapter(요청 맵핑 핸들러 어댑터)가 담당한다. 
    
 #### 동작방식
 
-   ![request-adapter.png](./image/request-adapter.png)
+   ![request-adapter.png](./request-adapter.png)
    
    - DispathcerServlet는 클라이언트로 부터 HTTP 요청 메시지가 오면 위의 그림에 있는 핸들러 어댑터에게 요청 매핑을 하도록 넘긴다.
    
@@ -376,7 +376,7 @@
      - 개발자는 원한다면 이 인터페이스를 확장하여  ArgumentResolver를 커스터마이징 할 수 있다.
      
  ### HTTP 메시지 컨버터
- ![converter-adapter.png](./image/converter-adapter.png)  
+ ![converter-adapter.png](./converter-adapter.png)  
  - 요청의 경우
     
     - @RequestBody 를 처리하는 ArgumentResolver 가 있고, HttpEntity 를 처리하는 ArgumentResolver 가 있다. 
