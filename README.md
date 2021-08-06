@@ -6,8 +6,8 @@
 ## 학습 목차
 
 - [로깅](#로깅)
-- [요청 매핑](#요청-매핑)
-- [응답 매핑](#응답-매핑)
+- [요청 맵핑](#요청-맵핑)
+- [응답 맵핑](#응답-맵핑)
 - [HTTP 메시지 컨버터](#HTTP-메시지-컨버터)
 - [요청 매핑 핸들러 어댑터](#요청-매핑-핸들러-어댑터)
 ---
@@ -46,7 +46,7 @@
     - 파일로 남길 때는 일별, 특정 용량에 따라 로그를 분할 하는 것이 가능하다.
     - 성능이 System.out 보다 좋다.
 ---
-## 요청 매핑
+## 요청 맵핑
  ### 어노테이션 기반 요청 메시지 처리
  - 스프링 컨테이너는 @Controller의 클래스를 찾아 스프링 빈에 등록하고 @RequestMapping 어노테이션을 찾아 해당 url을 WAS에 저장시킴으로써 처리할 준비를 마친다.
  - 기본적으로 DispatcherServlet 클래스를 사용하여 클라이언트와 HTTP 통신을 하게 된다.
@@ -94,7 +94,7 @@
    
     - 만약 조건에 맞지 않으면 각각 415 Unsupported Media Type, 406 Not Acceptable 오류를 반환한다.
     
- ### HTTP 요청 쿼리 파라미터 
+ ### HTTP 요청 데이터 전달 방식
  - 클라이언트에서 서버로 요청 데이터를 전달할 떄는 주로 3가지 방법을 사용한다.
  
  - GET-쿼리 파라미터
@@ -194,7 +194,199 @@
     
     - 하지만 헤더 정보가 필요하다면 HttpEntity를 사용해야 한다.
 #### JSON
+ - JSON 형식도 단순 텍스트와 맵핑 방식이 비슷하다.
    ```
+    1.
+    @PostMapping("/request-body-json-v2")
+    public String requestBodyJsonV2(@RequestBody String messageBody)
+    2.
+    @PostMapping("/request-body-json-v3")
+    public String requestBodyJsonV3(@RequestBody HelloData data)
+    3.
+    @PostMapping("/request-body-json-v4")
+    public String requestBodyJsonV4(HttpEntity<HelloData> httpEntity)
+   ```
+   - @RequestBody 변수에 String으로 맵핑하고 객체로 변환하려면 ObjectMapper를 통해 변환시킨다.
+   - 또는 자동으로 객체로 매핑하거나 HttpEntity 의 getBody로 객체에 데이터를 주입할 수 있다. 
+ 
+ ---
+ ## 응답 맵핑
+  ### HTTP 응답 데이터 생성 방식
+  - 정적 리소스
+     
+     - 예) 웹 브라우저에 정적인 HTML, css, js
+  
+  - 뷰 템플릿
+       
+     - 예) 웹 브라우저에 동적인 HTML을 제공할 때
+  
+  - HTTP 메시지
+       
+     - 예) API 호출
+             
+  #### 정적 리소스
+   - 스프링 부트는 클래스패스의 다음 디렉토리에 있는 정적 리소스를 제공한다.
+   
+        - /static , /public , /resources , /META-INF/resources
+        
+   - 웹 브라우저의 요청이 "http://localhost:8080/basic/hello-form.html" 디렉토리의 해당 파일을 반환한다.
+   
+ #### 뷰 템플릿
+  - 뷰 템플릿을 거쳐서 HTML이 생성되고, 뷰가 응답을 만들어서 전달한다.
+  
+  - 일반적으로 HTML을 동적으로 생성하는 용도로 사용하지만, 다른 것들도 가능하다. 뷰 템플릿이 만들 수 있는 것이라면 뭐든지 가능하다.
+  
+      ```
+      1.
+      @RequestMapping("/response-view-v1")
+      public ModelAndView responseViewV1() {
+            ModelAndView mav = new ModelAndView("response/hello").addObject("data", "hello!");
+            
+            return mav;
+      }
+       
+      2.
+      @RequestMapping("/response-view-v2")
+      public String responseViewV2(Model model) {
+                model.addAttribute("data", "hello!!");
+                return "response/hello";
+      }
+      ```
+    - '1.'과 같이 스프링이 지원하는 ModelAndView로 뷰에다 모델 객체 데이터를 넣는 작업을 하고 반환하면 뷰에 데이터가 삽입되어 뷰가 반환된다.
+    - '2.'와 같이 매핑 변수를 파라미터에 넣고 모델에 데이터를 넣어 뷰 템플릿의 경로를 반환하면 결과는 동일하다. 
+    - 만약 뷰를 반환하는 것이아니라 String을 반환하고 싶으면 메서드에 @ResponseBody나 클래스 상단의 @RestController를 사용하게 되면 View Resolver를 통해
+    뷰를 반환하는것이 아니라 해당 String 값을 화면에 그대로 입력하여 반환한다.
+    
+  #### HTTP API, 메시지 바디에 직접 입력
+  - HTTP API를 제공하는 경우에는 HTML이 아니라 데이터를 전달해야 하므로, HTTP 메시지 바디에 JSON 같은 형식으로 데이터를 실어 보낸다.
+  
+      ``` 
+      @ResponseBody
+      @GetMapping("/response-body-json-v2")
+      public HelloData responseBodyJsonV2() {
+              HelloData helloData = new HelloData();
+              helloData.setUsername("userA");
+              helloData.setAge(20);
+              return helloData;
+      }
+      ```
+    - 예시와 같이 @ResponseBody 나 @RestController를 객체를 만들거나 단순 스트링을 생성하여 반환할 수 있다.
+    - 이 방법 말고도 HttpEntity도 이전과 같이 가능하고 응답코드를 설정할 수 있다 예시와 같은 경우는 HttpEntity가 아니므로 @ResponseStatus 어노테이션을 사용한다.
 
-   ```
+---
+## HTTP 메시지 컨버터
+- 뷰 템플릿으로 HTML을 생성해서 응답하는 것이 아니라, HTTP API처럼 JSON 데이터를 HTTP 메시지
+  바디에서 직접 읽거나 쓰는 경우 HTTP 메시지 컨버터를 사용하면 편리하다.
+  
+### @ResponseBody 동작 흐름
+
+  ![converter.png](./image/converter.png)
+    
+   - 해당 어노테이션을 사용함으로써 viewResolver가 아닌 HttpMessageConverter가 사용된다.
+    
+   - 기본 문자처리는 StringHttpMessageConverter가 담당하고 객체는 Jackson라이브러리에 있는 MappingJackson2HttpMessageConverter가 담당한다.
+    
+   - 이것 말고도 상당히 많은 컨버터가 HttpMessageConverter에 구현되어 있다.
+    
+- 스프링MVC는 다음의 경우에 HTTP메시지 컨버터를 사용하게 된다.
+    
+    - HTTP 요청: @RequestBody , HttpEntity(RequestEntity)
+    - HTTP 응답: @ResponseBody , HttpEntity(ResponseEntity)
+    
+### HTTP 메시지 컨버터 인터페이스
+
+    ```
+     boolean canRead(Class<?> clazz, @Nullable MediaType mediaType);
+     
+     boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType);
+     
+     List<MediaType> getSupportedMediaTypes();
+  
+     T read(Class<? extends T> clazz, HttpInputMessage inputMessage)
+     			throws IOException, HttpMessageNotReadableException;
+     
+     void write(T t, @Nullable MediaType contentType, HttpOutputMessage outputMessage)
+     			throws IOException, HttpMessageNotWritableException;
+    ```
+   - canRead()와 canWrite()는 메시지 컨버터가 해당 클래스, 미디어 타입을 지원하는지 확인하는 기능을 한다.
+   
+   - read()와 write()는 메시지 컨버터로 읽고 쓰는 기능을 한다.
+   
+### 스프링 부트 기본 메시지 컨버터(일부 생략)
+ ```
+0 = ByteArrayHttpMessageConverter
+1 = StringHttpMessageConverter
+2 = MappingJackson2HttpMessageConverter
+ ``` 
+- 스프링 부트는 다양한 메시지 컨버터를 제공하는데, 대상 클래스 타입과 미디어 타입 둘을 체크해서
+  사용여부를 결정한다. 만약 만족하지 않으면 다음 메시지 컨버터로 우선순위가 넘어간다.
+
+- 만약 모든 컨버터를 조회 했는데도 변환할 수 없다면 오류를 반환한다.
+
+- ByteArrayHttpMessageConverter
+    - byte[] 데이터를 처리한다.
+    
+    - 클래스 타입은 byte[] 이고, 미디어 타입은 상관없다.
+    
+    - 응답에서 쓰기 미디어 타입은 application/octet-stream이다.
+- StringHttpMessageConverter
+
+    - String문자로 데이터를 처리한다.
+    
+    - 클래스 타입은 String 이고, 미디어 타입은 상관없다.
+    
+    - 응답에서 쓰기 미디어 타입은 text/plain이다.
+    
+- MappingJackson2HttpMessageConverter
+
+    - 클래스 타입은 객체 또는 HashMap 이고 미디어 타입은 application/json이다.
+   
+    - 응답 역시 application/json과 관련이 있다. 
+---
+### 요청 매핑 핸들러 어댑터
+
+#### 구조
+   ![adapter.png](./image/adapter.png)
+   
+   - @RequestMapping과 같은 요청을 처리하는 어댑터는 핸들러 어댑터를 확장하여 
+   구현한 RequestMappingHandlerAdapter(요청 맵핑 핸들러 어댑터)가 담당한다. 
+   
+#### 동작방식
+
+   ![request-adapter.png](./image/request-adapter.png)
+   
+   - DispathcerServlet는 클라이언트로 부터 HTTP 요청 메시지가 오면 위의 그림에 있는 핸들러 어댑터에게 요청 매핑을 하도록 넘긴다.
+   
+   - 이 어댑터는 ArgumentResolver를 통하여 각종 어노테이션과 파라미터 타입에 대해 컨트롤러가 필요한 파라미터 객체를 생성하여 컨트롤러에게 넘겨준다.
+   
+   - ReturnValueHandler는 반대로 응답 메시지를 생성하기 위해서는 컨트롤러가 생성한 응답 값을 클라이언트가 받을 수 있는 형태로써 변환해준다.
+   
+   - ArgumentResolver 인터페이스
+       ```
+            public interface HandlerMethodArgumentResolver {
+                boolean supportsParameter(MethodParameter parameter);
+            
+                @Nullable
+                Object resolveArgument(MethodParameter parameter, @Nullable
+               ModelAndViewContainer mavContainer, NativeWebRequest webRequest, 
+               @Nullable WebDataBinderFactory binderFactory) throws Exception;
+            }
+       ```
+     - 컨트롤러가 필요한 파라미터를 지원하는지 supportsParameter에서 체크하고, 가능하다면 resolveArgument에서
+     해당 파라미터의 객체를 생성하여 넘겨준다.
+     
+     - 개발자는 원한다면 이 인터페이스를 확장하여  ArgumentResolver를 커스터마이징 할 수 있다.
+     
+ ### HTTP 메시지 컨버터
+ ![converter-adapter.png](./image/converter-adapter.png)  
+ - 요청의 경우
+    
+    - @RequestBody 를 처리하는 ArgumentResolver 가 있고, HttpEntity 를 처리하는 ArgumentResolver 가 있다. 
+    이 ArgumentResolver 들이 HTTP 메시지 컨버터를 사용해서 필요한 객체를 생성하는 것이다.
+ 
+ - 응답의 경우
+ 
+    - @ResponseBody 와 HttpEntity 를 처리하는 ReturnValueHandler 가 있다. 
+    그리고 여기에서 HTTP 메시지 컨버터를 호출해서 응답 결과를 만든다.
+ 
  
